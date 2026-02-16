@@ -1,19 +1,16 @@
 'use client';
 
 import * as React from 'react';
-import { App, Platform } from '@/types/app';
 import { Header } from '@/components/header';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  platform: Platform;
-  setPlatform: (platform: Platform) => void;
 }
 
-export function AppLayout({ children, platform, setPlatform }: AppLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      <Header platform={platform} setPlatform={setPlatform} />
+      <Header />
       {children}
     </div>
   );

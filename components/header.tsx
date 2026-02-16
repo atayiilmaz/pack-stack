@@ -1,45 +1,38 @@
 'use client';
 
 import Link from 'next/link';
-import { Github } from 'lucide-react';
+import { Github, Menu } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { OSSelector } from '@/components/os-selector';
-import { Platform } from '@/types/app';
+import { Layers } from 'lucide-react';
 
-interface HeaderProps {
-  platform: string;
-  setPlatform: (os: string) => void;
-}
-
-export function Header({ platform, setPlatform }: HeaderProps) {
+export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-7xl items-center px-4">
-        <Link href="/" className="mr-6 flex items-center space-x-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary text-primary-foreground">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2L2 7l10 5 10-5-2 2 0-5-2 10z" />
-            </svg>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 max-w-7xl items-center px-4">
+        <Link href="/" className="mr-6 flex items-center space-x-3 group">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md group-hover:shadow-lg transition-all">
+            <Layers className="h-5 w-5" />
           </div>
-          <span className="hidden font-bold sm:inline-block">
+          <span className="hidden font-bold text-lg sm:inline-block group-hover:text-primary transition-colors">
             PackStack
           </span>
         </Link>
 
-        {/* OS Selector */}
-        <div className="mr-auto">
-          <OSSelector value={platform} onChange={setPlatform} />
-        </div>
-
-        <nav className="flex items-center space-x-4 text-sm font-medium">
+        <nav className="ml-auto flex items-center space-x-2 text-sm font-medium">
+          <Link
+            href="#how-it-works"
+            className="hidden sm:inline-flex px-4 py-2 rounded-lg hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
+          >
+            How it Works
+          </Link>
           <Link
             href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors hover:text-foreground/80 text-foreground/60 flex items-center gap-1"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
           >
             <Github className="h-4 w-4" />
-            <span className="hidden sm:inline">GitHub</span>
+            <span className="hidden sm:inline">Star on GitHub</span>
           </Link>
           <ThemeToggle />
         </nav>
