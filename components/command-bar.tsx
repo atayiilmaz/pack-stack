@@ -1,9 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Copy, Download, Share2, Terminal, FileDown } from 'lucide-react';
+import { Copy, Download, Share2, Terminal, FileDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { App, Platform } from '@/types/app';
-import { generateCommand, downloadScript, formatSize, getTotalSize, getPlatformDisplayName } from '@/lib/utils/scripts';
+import { generateCommand, generateScriptContent, downloadScript, formatSize, getTotalSize, getPlatformDisplayName } from '@/lib/utils/scripts';
 import { updateHash } from '@/lib/utils/url';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,7 +16,9 @@ interface CommandBarProps {
 }
 
 export function CommandBar({ selectedApps, platform }: CommandBarProps) {
+  const [showFullScript, setShowFullScript] = React.useState(false);
   const command = React.useMemo(() => generateCommand(selectedApps, platform), [selectedApps, platform]);
+  const fullScript = React.useMemo(() => generateScriptContent(selectedApps, platform), [selectedApps, platform]);
   const totalSize = React.useMemo(() => getTotalSize(selectedApps), [selectedApps]);
   const platformName = React.useMemo(() => getPlatformDisplayName(platform), [platform]);
 
@@ -40,6 +42,12 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
     toast.success('Share link copied to clipboard');
   };
 
+  const handleCopyScript = async () => {
+    if (!fullScript) return;
+    await navigator.clipboard.writeText(fullScript);
+    toast.success('Full script copied to clipboard');
+  };
+
   if (selectedApps.length === 0) {
     return (
       <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -54,9 +62,9 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
   }
 
   return (
-    <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg">
-      <div className="container max-w-7xl px-4 py-3 sm:py-4">
-        <div className="flex flex-col gap-3 sm:gap-4">
+    <div className="sticky bottom-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg max-h-[50vh] overflow-y-auto">
+      <div className="container max-w-7xl px-4 py-4 sm:py-5">
+        <div className="flex flex-col gap-4">
           {/* Stats Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -67,6 +75,24 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
                 {platformName} • Total size: ~{formatSize(totalSize)}
               </span>
             </div>
+            <Button
+              onClick={() => setShowFullScript(!showFullScript)}
+              variant="ghost"
+              size="sm"
+              className="gap-1 text-xs"
+            >
+              {showFullScript ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Show command only
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show full script
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Command Row */}
@@ -76,8 +102,11 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
                 <Terminal className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Textarea
                   readOnly
-                  value={command}
-                  className="h-14 sm:h-16 resize-none font-mono text-xs pl-10"
+                  value={showFullScript ? fullScript : command}
+                  className={showFullScript
+                    ? "min-h-[200px] max-h-[300px] resize-none font-mono text-xs pl-10 py-3"
+                    : "h-16 sm:h-20 resize-none font-mono text-xs pl-10"
+                  }
                   onClick={(e) => {
                     const target = e.target as HTMLTextAreaElement;
                     target.select();
@@ -86,7 +115,12 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
               </div>
             </div>
             <div className="flex gap-2 sm:self-center">
-              <Button onClick={handleCopy} variant="default" size="sm" className="gap-2">
+              <Button
+                onClick={showFullScript ? handleCopyScript : handleCopy}
+                variant="default"
+                size="sm"
+                className="gap-2"
+              >
                 <Copy className="h-4 w-4" />
                 <span className="hidden sm:inline">Copy</span>
               </Button>
