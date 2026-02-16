@@ -29,7 +29,7 @@ export const osOptions: OSSelect[] = [
   {
     id: 'macos' as const,
     name: 'macOS',
-    icon: '/icons/macos.png',
+    icon: '/icons/macos.svg',
     color: '#000000',
     description: 'Homebrew package manager',
     command: 'brew install'
