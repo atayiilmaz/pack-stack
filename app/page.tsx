@@ -45,20 +45,24 @@ export default function HomePage() {
     }
   }, []);
 
+  // Helper to check if app supports the selected platform
+  const supportsPlatform = (app: App, platform: string): boolean => {
+    // Direct platform match (windows, macos, linux)
+    if (platform in app.platforms) return true;
+
+    // Linux distros fallback to linux
+    if (['ubuntu', 'arch', 'debian', 'fedora'].includes(platform)) {
+      return 'linux' in app.platforms;
+    }
+
+    return false;
+  };
+
   // Filter apps based on platform, category, and search
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
-      // Platform compatibility - check if app supports selected OS
-      const hasPlatform = app.platforms[platform as Platform] ||
-                           app.platforms.linux; // Fallback to linux for distros
-
-      if (!hasPlatform && platform !== 'linux') return false;
-
-      // For Linux distros, check if app has linux support
-      if (platform !== 'linux' && platform !== 'windows' && platform !== 'macos') {
-        const linuxSupport = app.platforms.linux;
-        if (!linuxSupport) return false;
-      }
+      // Platform compatibility
+      if (!supportsPlatform(app, platform)) return false;
 
       // Category filter
       if (selectedCategory !== 'all' && app.category !== selectedCategory) {

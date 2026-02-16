@@ -46,7 +46,19 @@ const categoryColors: Record<string, string> = {
 };
 
 export function AppCard({ app, platform, checked, onCheckedChange }: AppCardProps) {
-  const platformInstall = app.platforms[platform];
+  // Get platform install info, with fallback to linux for distros
+  const getPlatformInstall = () => {
+    if (platform in app.platforms) {
+      return app.platforms[platform as keyof typeof app.platforms];
+    }
+    // Linux distros fallback to linux
+    if (['ubuntu', 'arch', 'debian', 'fedora'].includes(platform)) {
+      return app.platforms.linux;
+    }
+    return undefined;
+  };
+
+  const platformInstall = getPlatformInstall();
   const isCompatible = Boolean(platformInstall);
   const IconComponent = categoryIcons[app.category];
   const colorClass = categoryColors[app.category] || 'bg-muted text-muted-foreground';

@@ -43,4 +43,8 @@ export interface App {
   };
   size?: number;
   popularity?: number;
+  // Community submission metadata
+  source?: 'core' | 'community';
+  contributor?: string;
+  verified?: boolean;
 }

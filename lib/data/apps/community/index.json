@@ -1,0 +1,23 @@
+[
+  {
+    "comment": "Community apps can be added here. Each app should follow the schema defined in schema.ts",
+    "example": {
+      "id": "example-app",
+      "name": "Example App",
+      "description": "An example community app entry",
+      "category": "utilities",
+      "icon": "/icons/example.svg",
+      "website": "https://example.com",
+      "platforms": {
+        "windows": {
+          "type": "winget",
+          "command": "winget install --id Example.App --accept-source-agreements --accept-package-agreements",
+          "packageName": "Example.App"
+        }
+      },
+      "contributor": "github-username",
+      "source": "community",
+      "verified": true
+    }
+  }
+]

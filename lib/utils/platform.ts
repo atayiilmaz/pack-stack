@@ -18,7 +18,17 @@ export function getPlatformLabel(platform: Platform): string {
       return 'Windows';
     case 'macos':
       return 'macOS';
+    case 'ubuntu':
+      return 'Ubuntu';
+    case 'arch':
+      return 'Arch Linux';
+    case 'debian':
+      return 'Debian';
+    case 'fedora':
+      return 'Fedora';
     case 'linux':
       return 'Linux';
+    default:
+      return platform;
   }
 }

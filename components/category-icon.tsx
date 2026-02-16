@@ -3,16 +3,17 @@
 import * as React from 'react';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { type ComponentType } from 'react';
 
 interface CategoryIconProps {
-  name: keyof typeof LucideIcons;
+  name: string;
   className?: string;
 }
 
 const iconMap = LucideIcons;
 
 export function CategoryIcon({ name, className }: CategoryIconProps) {
-  const IconComponent = iconMap[name];
+  const IconComponent = iconMap[name as keyof typeof LucideIcons] as ComponentType<{ className?: string }> | undefined;
 
   if (!IconComponent) {
     return <span className={className}>📦</span>;
