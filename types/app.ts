@@ -8,6 +8,7 @@ export type InstallMethod =
   | 'apt'        // Debian/Ubuntu
   | 'snap'       // Snap Store
   | 'flatpak'    // Flatpak
+  | 'pacman'     // Arch Linux
   | 'dnf'        // Fedora
   | 'direct';    // Direct download URL
 
@@ -39,6 +40,12 @@ export interface App {
   platforms: {
     windows?: PlatformInstall;
     macos?: PlatformInstall;
+    // Linux distro-specific commands
+    ubuntu?: PlatformInstall;
+    arch?: PlatformInstall;
+    debian?: PlatformInstall;
+    fedora?: PlatformInstall;
+    // Generic linux fallback (used when distro-specific not available)
     linux?: PlatformInstall;
   };
   size?: number;

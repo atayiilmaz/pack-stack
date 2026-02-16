@@ -1,14 +1,35 @@
 import { App, Platform } from '@/types/app';
 
+/**
+ * Get the appropriate install command for an app based on platform/distro
+ */
+function getInstallCommand(app: App, platform: Platform): string {
+  // For Linux distros, try distro-specific first, then fall back to generic linux
+  if (platform === 'ubuntu' || platform === 'debian' || platform === 'arch' || platform === 'fedora') {
+    return app.platforms[platform]?.command || app.platforms.linux?.command || '';
+  }
+  return app.platforms[platform]?.command || '';
+}
+
+/**
+ * Get package manager for a platform
+ */
+function getPackageManager(platform: Platform): string {
+  switch (platform) {
+    case 'windows': return 'winget';
+    case 'macos': return 'brew';
+    case 'ubuntu':
+    case 'debian': return 'apt';
+    case 'arch': return 'pacman';
+    case 'fedora': return 'dnf';
+    case 'linux': return 'apt';
+    default: return 'apt';
+  }
+}
+
 export function generateCommand(apps: App[], platform: Platform): string {
   const commands = apps
-    .map((app) => {
-      // For Linux distros, use linux command as fallback
-      if (platform === 'ubuntu' || platform === 'arch' || platform === 'debian' || platform === 'fedora') {
-        return app.platforms.linux?.command || '';
-      }
-      return app.platforms[platform]?.command || '';
-    })
+    .map((app) => getInstallCommand(app, platform))
     .filter(Boolean);
 
   if (commands.length === 0) return '';
@@ -33,13 +54,7 @@ export function getScriptName(platform: Platform): string {
 
 export function generateScriptContent(apps: App[], platform: Platform): string {
   const commands = apps
-    .map((app) => {
-      // For Linux distros, use linux command as fallback
-      if (platform === 'ubuntu' || platform === 'arch' || platform === 'debian' || platform === 'fedora') {
-        return app.platforms.linux?.command || '';
-      }
-      return app.platforms[platform]?.command || '';
-    })
+    .map((app) => getInstallCommand(app, platform))
     .filter(Boolean);
 
   switch (platform) {
@@ -61,9 +76,7 @@ echo ""
 echo "Done!"`;
 
     case 'ubuntu':
-    case 'arch':
     case 'debian':
-    case 'fedora':
       return `#!/bin/bash
 echo "Installing ${apps.length} apps..."
 echo ""
@@ -71,7 +84,31 @@ echo "Updating package list..."
 sudo apt update
 echo ""
 echo "Installing packages..."
-${commands.map(cmd => cmd.replace('sudo ', '')).join('\n')}
+${commands.map(cmd => cmd.replace('sudo apt install ', '').replace('sudo ', '')).join('\n')}
+echo ""
+echo "Done!"`;
+
+    case 'arch':
+      return `#!/bin/bash
+echo "Installing ${apps.length} apps..."
+echo ""
+echo "Updating package database..."
+sudo pacman -Sy
+echo ""
+echo "Installing packages..."
+${commands.map(cmd => cmd.replace('sudo pacman -S ', '')).join('\n')}
+echo ""
+echo "Done!"`;
+
+    case 'fedora':
+      return `#!/bin/bash
+echo "Installing ${apps.length} apps..."
+echo ""
+echo "Updating package database..."
+sudo dnf check-update
+echo ""
+echo "Installing packages..."
+${commands.map(cmd => cmd.replace('sudo dnf install ', '')).join('\n')}
 echo ""
 echo "Done!"`;
 

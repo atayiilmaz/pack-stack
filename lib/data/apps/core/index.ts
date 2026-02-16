@@ -6,6 +6,7 @@ import { coreUtilitiesApps } from './utilities';
 import { coreSecurityApps } from './security';
 import { coreCommunicationApps } from './communication';
 import { coreDesignApps } from './design';
+import { coreGamingApps } from './gaming';
 
 /**
  * Core apps are curated, tested, and maintained by the PackStack team.
@@ -19,6 +20,7 @@ export const coreApps: App[] = [
   ...coreSecurityApps,
   ...coreCommunicationApps,
   ...coreDesignApps,
+  ...coreGamingApps,
 ];
 
 /**
@@ -32,5 +34,5 @@ export const coreAppsByCategory = {
   security: coreSecurityApps,
   communication: coreCommunicationApps,
   design: coreDesignApps,
-  gaming: [] as App[],
+  gaming: coreGamingApps,
 } as const;
