@@ -1,5 +1,5 @@
 // App type definitions
-export type Platform = 'windows' | 'macos' | 'linux';
+export type Platform = 'windows' | 'macos' | 'linux' | 'ubuntu' | 'arch' | 'debian' | 'fedora';
 
 export type InstallMethod =
   | 'winget'     // Windows Package Manager

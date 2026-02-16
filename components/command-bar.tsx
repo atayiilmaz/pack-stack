@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Copy, Download, Share2, Terminal, FileDown } from 'lucide-react';
 import { App, Platform } from '@/types/app';
-import { generateCommand, downloadScript, formatSize, getTotalSize } from '@/lib/utils/scripts';
+import { generateCommand, downloadScript, formatSize, getTotalSize, getPlatformDisplayName } from '@/lib/utils/scripts';
 import { updateHash } from '@/lib/utils/url';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,7 @@ interface CommandBarProps {
 export function CommandBar({ selectedApps, platform }: CommandBarProps) {
   const command = React.useMemo(() => generateCommand(selectedApps, platform), [selectedApps, platform]);
   const totalSize = React.useMemo(() => getTotalSize(selectedApps), [selectedApps]);
+  const platformName = React.useMemo(() => getPlatformDisplayName(platform), [platform]);
 
   const handleCopy = async () => {
     if (!command) return;
@@ -63,7 +64,7 @@ export function CommandBar({ selectedApps, platform }: CommandBarProps) {
                 {selectedApps.length} app{selectedApps.length !== 1 ? 's' : ''}
               </Badge>
               <span className="text-sm text-muted-foreground">
-                Total size: ~{formatSize(totalSize)}
+                {platformName} • Total size: ~{formatSize(totalSize)}
               </span>
             </div>
           </div>

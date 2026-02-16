@@ -3,27 +3,21 @@
 import * as React from 'react';
 import { useEffect, useMemo } from 'react';
 import { CheckCircle2, Download, Share2, Layers, Zap, Shield } from 'lucide-react';
-import { Header } from '@/components/header';
+import { AppLayout } from '@/components/app-layout';
 import { CategoryFilter } from '@/components/category-filter';
 import { SearchBar } from '@/components/search-bar';
 import { AppCard } from '@/components/app-card';
 import { CommandBar } from '@/components/command-bar';
 import { apps, categories, Category } from '@/lib/data/apps';
-import { detectPlatform } from '@/lib/utils/platform';
 import { decodeAppIds } from '@/lib/utils/url';
 import { App, Platform } from '@/types/app';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
-  const [platform, setPlatform] = React.useState<Platform>('windows');
+  const [platform, setPlatform] = React.useState<string>('windows');
   const [selectedCategory, setSelectedCategory] = React.useState<Category | 'all'>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedApps, setSelectedApps] = React.useState<Set<string>>(new Set());
-
-  // Detect platform on mount
-  useEffect(() => {
-    setPlatform(detectPlatform());
-  }, []);
 
   // Load selected apps from URL hash on mount
   useEffect(() => {
@@ -38,9 +32,17 @@ export default function HomePage() {
   // Filter apps based on platform, category, and search
   const filteredApps = useMemo(() => {
     return apps.filter((app) => {
-      // Platform compatibility
-      const platformInstall = app.platforms[platform];
-      if (!platformInstall) return false;
+      // Platform compatibility - check if app supports selected OS
+      const hasPlatform = app.platforms[platform as Platform] ||
+                           app.platforms.linux; // Fallback to linux for distros
+
+      if (!hasPlatform && platform !== 'linux') return false;
+
+      // For Linux distros, check if app has linux support
+      if (platform !== 'linux' && platform !== 'windows' && platform !== 'macos') {
+        const linuxSupport = app.platforms.linux;
+        if (!linuxSupport) return false;
+      }
 
       // Category filter
       if (selectedCategory !== 'all' && app.category !== selectedCategory) {
@@ -87,13 +89,24 @@ export default function HomePage() {
 
   // Get selected app objects
   const selectedAppObjects = useMemo(() => {
-    return apps.filter((app) => selectedApps.has(app.id) && app.platforms[platform]);
-  }, [selectedApps, platform]);
+    return apps.filter((app) => selectedApps.has(app.id));
+  }, [selectedApps]);
+
+  // Get platform label for display
+  const getPlatformLabel = (os: string) => {
+    switch (os) {
+      case 'windows': return 'Windows';
+      case 'macos': return 'macOS';
+      case 'ubuntu': return 'Ubuntu';
+      case 'arch': return 'Arch Linux';
+      case 'debian': return 'Debian';
+      case 'fedora': return 'Fedora';
+      default: return os;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
+    <AppLayout platform={platform} setPlatform={setPlatform}>
       {/* Hero Section */}
       <section className="border-b bg-gradient-to-b from-muted/50 to-background">
         <div className="container max-w-7xl px-4 py-12 md:py-16 text-center">
@@ -109,7 +122,7 @@ export default function HomePage() {
             Install all your apps in one click
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
-            The open-source Ninite for Windows, macOS, and Linux.
+            The open-source Ninite alternative for Windows, macOS, and Linux.
             <br />
             Select apps, get your command, install from official sources.
           </p>
@@ -129,7 +142,7 @@ export default function HomePage() {
           </div>
           <div className="mt-6">
             <span className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-xs font-medium text-primary border border-primary/20">
-              Detected: {platform === 'windows' ? 'Windows' : platform === 'macos' ? 'macOS' : 'Linux'}
+              Selected: {getPlatformLabel(platform)}
             </span>
           </div>
         </div>
@@ -189,7 +202,7 @@ export default function HomePage() {
                 <AppCard
                   key={app.id}
                   app={app}
-                  platform={platform}
+                  platform={platform as Platform}
                   checked={selectedApps.has(app.id)}
                   onCheckedChange={() => toggleApp(app.id)}
                 />
@@ -214,7 +227,7 @@ export default function HomePage() {
       </main>
 
       {/* Command Bar */}
-      <CommandBar selectedApps={selectedAppObjects} platform={platform} />
+      <CommandBar selectedApps={selectedAppObjects} platform={platform as Platform} />
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8">
@@ -239,6 +252,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-    </div>
+    </AppLayout>
   );
 }
