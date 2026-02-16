@@ -84,22 +84,20 @@ export function OSSelector({ value, onChange }: OSSelectorProps) {
                     className={cn(
                       'flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl transition-all duration-500',
                       selected
-                        ? 'shadow-xl scale-110'
+                        ? 'shadow-xl scale-110 bg-white'
                         : 'group-hover:scale-105 group-hover:shadow-lg'
                     )}
                     style={{
-                      backgroundColor: selected ? os.color : `${os.color}15`,
+                      backgroundColor: selected ? '#ffffff' : `${os.color}15`,
                     }}
                   >
                     <img
                       src={os.icon}
                       alt={os.name}
                       className={cn(
-                        'h-10 w-10 sm:h-12 sm:w-12 transition-transform duration-300',
-                        selected ? 'scale-110' : 'group-hover:scale-105',
-                        selected ? 'brightness-0 invert' : ''
+                        'h-10 w-10 sm:h-12 sm:w-12 drop-shadow-sm transition-transform duration-300 object-contain',
+                        selected ? 'scale-110' : 'group-hover:scale-105'
                       )}
-                      style={{ filter: selected ? 'brightness(0) invert(1)' : undefined }}
                     />
                   </div>
                   {/* Glow effect */}
@@ -228,18 +226,17 @@ export function OSSelector({ value, onChange }: OSSelectorProps) {
                     <div
                       className={cn(
                         'flex h-12 w-12 items-center justify-center rounded-xl transition-all',
-                        selected ? 'shadow-lg scale-110' : 'group-hover:scale-105'
+                        selected ? 'shadow-lg scale-110 bg-white' : 'group-hover:scale-105'
                       )}
                       style={{
-                        backgroundColor: selected ? distro.color : `${distro.color}15`,
+                        backgroundColor: selected ? '#ffffff' : `${distro.color}15`,
                       }}
                     >
                       <img
                         src={distro.icon}
                         alt={distro.name}
                         className={cn(
-                          'h-7 w-7 transition-transform',
-                          selected ? 'brightness-0 invert' : ''
+                          'h-7 w-7 transition-transform drop-shadow-sm object-contain'
                         )}
                       />
                     </div>

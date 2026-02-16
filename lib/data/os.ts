@@ -21,7 +21,7 @@ export const osOptions: OSSelect[] = [
   {
     id: 'windows' as const,
     name: 'Windows',
-    icon: '/icons/windows.svg',
+    icon: '/icons/windows.png',
     color: '#0078D4',
     description: 'Winget package manager',
     command: 'winget install'
@@ -29,7 +29,7 @@ export const osOptions: OSSelect[] = [
   {
     id: 'macos' as const,
     name: 'macOS',
-    icon: '/icons/macos.svg',
+    icon: '/icons/macos.png',
     color: '#000000',
     description: 'Homebrew package manager',
     command: 'brew install'
@@ -37,7 +37,7 @@ export const osOptions: OSSelect[] = [
   {
     id: 'linux' as const,
     name: 'Linux',
-    icon: '/icons/linux.svg',
+    icon: '/icons/linux.png',
     color: '#DD4814',
     description: 'Select your distribution',
     command: 'Select distro'
@@ -48,7 +48,7 @@ export const linuxDistros: OSSelect[] = [
   {
     id: 'ubuntu' as const,
     name: 'Ubuntu',
-    icon: '/icons/ubuntu.svg',
+    icon: '/icons/ubuntu.png',
     color: '#E95420',
     description: 'APT package manager',
     command: 'sudo apt install',
@@ -57,7 +57,7 @@ export const linuxDistros: OSSelect[] = [
   {
     id: 'arch' as const,
     name: 'Arch Linux',
-    icon: '/icons/arch.svg',
+    icon: '/icons/arch.png',
     color: '#1793D1',
     description: 'Pacman package manager',
     command: 'sudo pacman -S',
@@ -66,7 +66,7 @@ export const linuxDistros: OSSelect[] = [
   {
     id: 'debian' as const,
     name: 'Debian',
-    icon: '/icons/debian.svg',
+    icon: '/icons/debian.png',
     color: '#D70A53',
     description: 'APT package manager',
     command: 'sudo apt install',
