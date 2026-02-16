@@ -395,7 +395,7 @@ export default function HomePage() {
               <h4 className="font-semibold mb-3">Project</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-2">
+                  <a href="https://github.com/atayiilmaz/pack-stack" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors flex items-center gap-2">
                     <Github className="h-4 w-4" />
                     GitHub Repository
                   </a>

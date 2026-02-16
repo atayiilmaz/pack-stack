@@ -26,7 +26,7 @@ export function Header() {
             How it Works
           </Link>
           <Link
-            href="https://github.com"
+            href="https://github.com/atayiilmaz/pack-stack"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
