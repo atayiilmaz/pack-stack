@@ -77,7 +77,7 @@ export function AppCard({ app, platform, checked, onCheckedChange }: AppCardProp
         {/* Hover gradient effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-        <CardHeader className="pb-3 p-4">
+        <CardHeader className="pb-3 p-5">
           <div className="flex items-start gap-3">
             {/* Custom styled checkbox */}
             <div className="relative shrink-0">
@@ -97,13 +97,13 @@ export function AppCard({ app, platform, checked, onCheckedChange }: AppCardProp
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-base leading-tight truncate pr-1 group-hover:text-primary transition-colors">
+                  <CardTitle className="text-base font-semibold leading-snug group-hover:text-primary transition-colors">
                     {app.name}
                   </CardTitle>
                   <Badge
                     variant="secondary"
                     className={cn(
-                      'text-xs gap-1 mt-1.5 border font-medium',
+                      'text-xs gap-1 mt-2 border font-medium',
                       colorClass
                     )}
                   >
@@ -143,21 +143,21 @@ export function AppCard({ app, platform, checked, onCheckedChange }: AppCardProp
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 pt-0">
-          <CardDescription className="text-xs line-clamp-2">
+        <CardContent className="p-5 pt-0">
+          <CardDescription className="text-xs leading-relaxed line-clamp-3">
             {app.description}
           </CardDescription>
 
           {!isCompatible && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1.5">
-              <Shield className="h-3 w-3 shrink-0" />
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              <Shield className="h-3.5 w-3.5 shrink-0" />
               <span>Not available for {platform}</span>
             </div>
           )}
 
           {isCompatible && checked && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-primary bg-primary/5 rounded-md px-2 py-1.5 border border-primary/10">
-              <Check className="h-3 w-3 shrink-0" />
+            <div className="mt-3 flex items-center gap-2 text-xs text-primary bg-primary/5 rounded-md px-3 py-2 border border-primary/10">
+              <Check className="h-3.5 w-3.5 shrink-0" />
               <span>Added to installation</span>
             </div>
           )}
