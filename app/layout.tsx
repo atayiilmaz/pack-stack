@@ -33,6 +33,7 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="packstack-theme"
         >
           <TooltipProvider delayDuration={0}>
             {children}
