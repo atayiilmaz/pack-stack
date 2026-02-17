@@ -1,129 +1,42 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
-import {
-  CheckCircle2,
-  Download,
-  Layers,
-  Zap,
-  Shield,
-  Terminal,
-  Package,
-  Clock,
-  Lock,
-  Github,
-  ArrowRight,
-  Sparkles,
-  Cpu,
-  HardDrive,
-} from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { CheckCircle2, Layers, Zap, Shield, Github, ArrowRight, Sparkles, X, Lock } from 'lucide-react';
 import { AppLayout } from '@/components/app-layout';
-import { CategoryFilter } from '@/components/category-filter';
-import { SearchBar } from '@/components/search-bar';
-import { AppCard } from '@/components/app-card';
-import { CommandBar } from '@/components/command-bar';
 import { OSSelector } from '@/components/os-selector';
-import { apps, categories, Category } from '@/lib/data/apps';
-import { decodeAppIds } from '@/lib/utils/url';
-import { App, Platform } from '@/types/app';
+import { CommandBar } from '@/components/command-bar';
+import { PackageSearch } from '@/components/package-search';
+import { Platform, PackageMetadata } from '@/types/app';
 import { Button } from '@/components/ui/button';
 
+type InstallableItem = PackageMetadata;
+
 export default function HomePage() {
-  const [platform, setPlatform] = useState<string>('windows');
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedApps, setSelectedApps] = useState<Set<string>>(new Set());
+  const [platform, setPlatform] = useState<string>('macos');
+  const [selectedItems, setSelectedItems] = useState<InstallableItem[]>([]);
 
-  // Load selected apps from URL hash on mount
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      const appIds = decodeAppIds(hash);
-      const validIds = new Set(appIds.filter((id) => apps.some((app) => app.id === id)));
-      setSelectedApps(validIds);
-    }
-  }, []);
+  // Toggle item selection
+  const toggleItem = useCallback((item: InstallableItem) => {
+    setSelectedItems((prev) => {
+      const identifier = item.identifier;
+      const exists = prev.find(i => i.identifier === identifier);
 
-  // Helper to check if app supports the selected platform
-  const supportsPlatform = (app: App, platform: string): boolean => {
-    // Direct platform match (windows, macos, linux)
-    if (platform in app.platforms) return true;
-
-    // Linux distros fallback to linux
-    if (['ubuntu', 'arch', 'debian', 'fedora'].includes(platform)) {
-      return 'linux' in app.platforms;
-    }
-
-    return false;
-  };
-
-  // Filter apps based on platform, category, and search
-  const filteredApps = useMemo(() => {
-    return apps.filter((app) => {
-      // Platform compatibility
-      if (!supportsPlatform(app, platform)) return false;
-
-      // Category filter
-      if (selectedCategory !== 'all' && app.category !== selectedCategory) {
-        return false;
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          app.name.toLowerCase().includes(query) ||
-          app.description.toLowerCase().includes(query)
-        );
-      }
-
-      return true;
-    });
-  }, [platform, selectedCategory, searchQuery]);
-
-  // Toggle app selection
-  const toggleApp = (appId: string) => {
-    setSelectedApps((prev) => {
-      const next = new Set(prev);
-      if (next.has(appId)) {
-        next.delete(appId);
+      if (exists) {
+        return prev.filter(i => i.identifier !== identifier);
       } else {
-        next.add(appId);
+        return [...prev, item];
       }
-      return next;
     });
-  };
+  }, []);
 
   // Clear all selections
   const clearAll = () => {
-    setSelectedApps(new Set());
-    window.history.replaceState(null, '', ' ');
+    setSelectedItems([]);
   };
 
-  // Select all visible
-  const selectAllVisible = () => {
-    const visibleIds = new Set(filteredApps.map((app) => app.id));
-    setSelectedApps((prev) => new Set([...prev, ...visibleIds]));
-  };
-
-  // Get selected app objects
-  const selectedAppObjects = useMemo(() => {
-    return apps.filter((app) => selectedApps.has(app.id));
-  }, [selectedApps]);
-
-  // Get platform label for display
-  const getPlatformLabel = (os: string) => {
-    switch (os) {
-      case 'windows': return 'Windows';
-      case 'macos': return 'macOS';
-      case 'ubuntu': return 'Ubuntu';
-      case 'arch': return 'Arch Linux';
-      case 'debian': return 'Debian';
-      case 'fedora': return 'Fedora';
-      default: return os;
-    }
-  };
+  // Get selected items as array for CommandBar
+  const selectedItemsArray = React.useMemo(() => selectedItems, [selectedItems]);
 
   return (
     <AppLayout>
@@ -148,13 +61,13 @@ export default function HomePage() {
 
           {/* Tagline */}
           <h2 className="text-2xl md:text-3xl font-bold mb-4 animate-fadeIn" style={{ animationDelay: '100ms' }}>
-            Install all your apps in one click
+            Search and install any package
           </h2>
 
           {/* Description */}
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fadeIn" style={{ animationDelay: '200ms' }}>
-            The open-source alternative to Ninite. Select your apps, get a single command,
-            and install everything from official sources. No bloat, no bundles, no tracking.
+            Search package repositories in real-time. Generate installation scripts for any OS.
+            All packages from official sources.
           </p>
 
           {/* Features Grid */}
@@ -174,7 +87,7 @@ export default function HomePage() {
               </div>
               <div className="text-left">
                 <p className="font-semibold text-sm">Official Sources</p>
-                <p className="text-xs text-muted-foreground">Verified downloads</p>
+                <p className="text-xs text-muted-foreground">Verified packages</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
@@ -182,8 +95,8 @@ export default function HomePage() {
                 <Zap className="h-5 w-5" />
               </div>
               <div className="text-left">
-                <p className="font-semibold text-sm">Lightning Fast</p>
-                <p className="text-xs text-muted-foreground">One command setup</p>
+                <p className="font-semibold text-sm">Real-time</p>
+                <p className="text-xs text-muted-foreground">Live package search</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border">
@@ -206,12 +119,12 @@ export default function HomePage() {
             <ArrowRight className="h-4 w-4 hidden sm:block" />
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-              <span>Select your apps</span>
+              <span>Search packages</span>
             </div>
             <ArrowRight className="h-4 w-4 hidden sm:block" />
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-              <span>Copy & run command</span>
+              <span>Download script</span>
             </div>
           </div>
         </div>
@@ -227,155 +140,67 @@ export default function HomePage() {
             </div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">Select your operating system</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              We'll generate the correct installation commands using your system's native package manager
+              We&apos;ll search the appropriate package repository and generate installation scripts
             </p>
           </div>
           <OSSelector value={platform} onChange={setPlatform} />
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="border-b bg-background">
-        <div className="container max-w-6xl px-4 py-12 md:py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">How PackStack Works</h2>
-            <p className="text-muted-foreground">Three simple steps to install all your favorite software</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {/* Step 1 */}
-            <div className="relative">
-              <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white mb-4 shadow-lg shadow-blue-500/25">
-                  <Cpu className="h-7 w-7" />
-                </div>
-                <div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 text-white text-sm font-bold">
-                  1
-                </div>
-                <h3 className="font-bold text-lg mb-2">Select Your OS</h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose your operating system and we'll match you with the right package manager
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative">
-              <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white mb-4 shadow-lg shadow-purple-500/25">
-                  <Package className="h-7 w-7" />
-                </div>
-                <div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-purple-500 text-white text-sm font-bold">
-                  2
-                </div>
-                <h3 className="font-bold text-lg mb-2">Pick Your Apps</h3>
-                <p className="text-sm text-muted-foreground">
-                  Browse our curated collection and select the apps you want to install
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative">
-              <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-colors">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white mb-4 shadow-lg shadow-green-500/25">
-                  <Terminal className="h-7 w-7" />
-                </div>
-                <div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-white text-sm font-bold">
-                  3
-                </div>
-                <h3 className="font-bold text-lg mb-2">Copy & Run</h3>
-                <p className="text-sm text-muted-foreground">
-                  Get a single command that installs everything from official sources
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* App Selection Section */}
+      {/* Package Search Section */}
       <section className="bg-muted/20">
-        <div className="container max-w-7xl px-4 py-8 md:py-12">
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-            {/* Sidebar */}
-            <aside className="hidden lg:block w-56 shrink-0">
-              <CategoryFilter value={selectedCategory} onChange={setSelectedCategory} />
-            </aside>
+        <div className="container max-w-4xl px-4 py-8 md:py-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Step 2: Search and select packages</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">Search packages</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Search the official package repository for {platform === 'macos' ? 'Homebrew' :
+              platform === 'arch' ? 'Arch Linux (Official + AUR)' :
+              platform === 'ubuntu' ? 'Ubuntu' :
+              platform === 'debian' ? 'Debian' :
+              platform === 'fedora' ? 'Fedora (via apt-compatible)' :
+              platform === 'windows' ? 'Winget (coming soon)' : 'your platform'}
+            </p>
+          </div>
 
-            {/* App Grid */}
-            <div className="flex-1 space-y-4 md:space-y-6">
-              {/* Mobile Category & Search */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:hidden">
-                <CategoryFilter value={selectedCategory} onChange={setSelectedCategory} />
-                <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          {/* Selected packages display */}
+          {selectedItems.length > 0 && (
+            <div className="mb-6 p-4 rounded-xl bg-card border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-sm">Selected Packages</h3>
+                <Button variant="ghost" size="sm" onClick={clearAll} className="h-7 text-xs">
+                  Clear all
+                </Button>
               </div>
-
-              {/* Desktop Search & Actions */}
-              <div className="hidden lg:flex items-center gap-4">
-                <div className="flex-1">
-                  <SearchBar value={searchQuery} onChange={setSearchQuery} />
-                </div>
-                {filteredApps.length > 0 && (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={selectAllVisible}>
-                      Select All
-                    </Button>
-                    {selectedApps.size > 0 && (
-                      <Button variant="ghost" size="sm" onClick={clearAll}>
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Results Count */}
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  Showing {filteredApps.length} app{filteredApps.length !== 1 ? 's' : ''}
-                  {selectedCategory !== 'all' && ` in ${categories[selectedCategory].name}`}
-                </span>
-                {selectedApps.size > 0 && (
-                  <span className="text-primary font-medium">
-                    {selectedApps.size} selected
-                  </span>
-                )}
-              </div>
-
-              {/* App Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                {filteredApps.map((app) => (
-                  <AppCard
-                    key={app.id}
-                    app={app}
-                    platform={platform as Platform}
-                    checked={selectedApps.has(app.id)}
-                    onCheckedChange={() => toggleApp(app.id)}
-                  />
+              <div className="flex flex-wrap gap-2">
+                {selectedItems.map((item) => (
+                  <button
+                    key={item.identifier}
+                    onClick={() => toggleItem(item)}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm hover:bg-primary/20 transition-colors"
+                  >
+                    {item.name}
+                    <X className="h-3 w-3" />
+                  </button>
                 ))}
               </div>
-
-              {filteredApps.length === 0 && (
-                <div className="py-16 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
-                    <svg className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">No apps found</h3>
-                  <p className="text-muted-foreground">
-                    Try adjusting your search or category filter
-                  </p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
+
+          {/* Package Search Component */}
+          <PackageSearch
+            platform={platform as Platform}
+            onSelect={toggleItem}
+            selectedPackages={new Set(selectedItems.map(i => i.identifier))}
+          />
         </div>
       </section>
 
       {/* Command Bar */}
-      <CommandBar selectedApps={selectedAppObjects} platform={platform as Platform} />
+      <CommandBar selectedApps={selectedItemsArray} platform={platform as Platform} />
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-12">
@@ -390,7 +215,7 @@ export default function HomePage() {
                 <span className="font-bold">PackStack</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                The open-source Ninite alternative. Install apps from official sources with one command.
+                The open-source package installer. Search official repositories and generate installation scripts.
               </p>
             </div>
 
@@ -409,11 +234,6 @@ export default function HomePage() {
                     Documentation
                   </a>
                 </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Request an App
-                  </a>
-                </li>
               </ul>
             </div>
 
@@ -424,11 +244,6 @@ export default function HomePage() {
                 <li>
                   <a href="https://github.com/atayiilmaz/pack-stack/blob/main/LICENSE" className="hover:text-foreground transition-colors">
                     MIT License
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Privacy Policy
                   </a>
                 </li>
                 <li className="flex items-center gap-1.5">

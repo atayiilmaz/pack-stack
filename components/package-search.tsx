@@ -1,0 +1,221 @@
+'use client';
+
+import * as React from 'react';
+import { Search, Loader2, Package, AlertCircle, Check } from 'lucide-react';
+import { Platform, PackageMetadata } from '@/types/app';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { getClientForPlatform } from '@/lib/api';
+
+interface PackageSearchProps {
+  platform: Platform;
+  onSelect: (pkg: PackageMetadata) => void;
+  selectedPackages: Set<string>;
+}
+
+export function PackageSearch({ platform, onSelect, selectedPackages }: PackageSearchProps) {
+  const [query, setQuery] = React.useState('');
+  const [results, setResults] = React.useState<PackageMetadata[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [hasSearched, setHasSearched] = React.useState(false);
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // Debounced search
+  React.useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (query.length < 2) {
+      setResults([]);
+      setHasSearched(false);
+      setError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const client = getClientForPlatform(platform);
+
+        if (!client) {
+          setResults([]);
+          setHasSearched(true);
+          return;
+        }
+
+        const searchResults = await client.search(query, { limit: 50 });
+        setResults(searchResults);
+        setHasSearched(true);
+      } catch (err) {
+        console.error('Search error:', err);
+        setError('Failed to search packages');
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [query, platform]);
+
+  const isSelected = (pkg: PackageMetadata) => selectedPackages.has(pkg.identifier);
+
+  const getPackageManagerLabel = (pkg: PackageMetadata): string => {
+    switch (pkg.packageManager) {
+      case 'brew':
+        return pkg.repository === 'cask' ? 'Cask' : 'Formula';
+      case 'pacman':
+        return pkg.repository === 'aur' ? 'AUR' : 'Official';
+      case 'apt':
+        return pkg.repository || 'apt';
+      default:
+        return pkg.packageManager;
+    }
+  };
+
+  const getPackageManagerColor = (pkg: PackageMetadata): string => {
+    switch (pkg.packageManager) {
+      case 'brew':
+        return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+      case 'pacman':
+        return pkg.repository === 'aur'
+          ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+          : 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+      case 'apt':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default:
+        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder={`Search packages for ${platform}...`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-10 h-12 text-base"
+          autoFocus
+        />
+        {isLoading && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+        )}
+      </div>
+
+      {/* Search Status */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <span className="text-sm text-destructive">{error}</span>
+        </div>
+      )}
+
+      {/* Results */}
+      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+        {!hasSearched && query.length < 2 && (
+          <div className="text-center py-12 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Enter at least 2 characters to search</p>
+            <p className="text-sm mt-2">Search results are fetched from official package sources</p>
+          </div>
+        )}
+
+        {hasSearched && results.length === 0 && !isLoading && (
+          <div className="text-center py-12 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No packages found for "{query}"</p>
+            <p className="text-sm mt-2">
+              {platform === 'windows'
+                ? 'Winget search is coming soon'
+                : 'Try a different search term'}
+            </p>
+          </div>
+        )}
+
+        {results.map((pkg) => (
+          <button
+            key={pkg.identifier}
+            onClick={() => onSelect(pkg)}
+            className={cn(
+              'w-full text-left p-4 rounded-lg border-2 transition-all duration-200',
+              'hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]',
+              'group',
+              isSelected(pkg)
+                ? 'border-primary bg-primary/5 shadow-sm'
+                : 'border-border bg-card hover:border-primary/30'
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={cn(
+                    'font-semibold text-base',
+                    isSelected(pkg) ? 'text-primary' : 'group-hover:text-primary transition-colors'
+                  )}>
+                    {pkg.name}
+                  </span>
+                  {isSelected(pkg) && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {pkg.description || 'No description available'}
+                </p>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={cn('text-xs', getPackageManagerColor(pkg))}>
+                    {getPackageManagerLabel(pkg)}
+                  </Badge>
+                  {pkg.version && (
+                    <span className="text-xs text-muted-foreground">
+                      {pkg.version}
+                    </span>
+                  )}
+                  {pkg.homepage && (
+                    <a
+                      href={pkg.homepage}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Homepage
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {isSelected(pkg) && (
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                  <Check className="h-4 w-4 text-primary-foreground" />
+                </div>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Results Count */}
+      {hasSearched && results.length > 0 && (
+        <div className="text-sm text-muted-foreground text-center">
+          Showing {results.length} result{results.length !== 1 ? 's' : ''}
+        </div>
+      )}
+    </div>
+  );
+}

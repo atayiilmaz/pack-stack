@@ -55,3 +55,26 @@ export interface App {
   contributor?: string;
   verified?: boolean;
 }
+
+/**
+ * Package metadata from API search
+ * Used for dynamically discovered packages
+ */
+export interface PackageMetadata {
+  name: string;           // Display name
+  identifier: string;     // Package identifier for installation
+  description: string;
+  version?: string;
+  homepage?: string;
+  size?: number;          // Size in MB
+  repository?: string;    // repo/channel info
+  packageManager: InstallMethod;
+}
+
+/**
+ * Selected package for installation
+ * Combines metadata with user selection state
+ */
+export interface SelectedPackage extends PackageMetadata {
+  selected: boolean;
+}

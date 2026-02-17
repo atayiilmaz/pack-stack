@@ -1,4 +1,9 @@
-import { App, Platform } from '@/types/app';
+import { App, Platform, PackageMetadata } from '@/types/app';
+
+/**
+ * Union type for items that can be installed
+ */
+type InstallableItem = App | PackageMetadata;
 
 /**
  * Get the appropriate install command for an app based on platform/distro
@@ -9,6 +14,39 @@ function getInstallCommand(app: App, platform: Platform): string {
     return app.platforms[platform]?.command || app.platforms.linux?.command || '';
   }
   return app.platforms[platform]?.command || '';
+}
+
+/**
+ * Get package identifier for script generation
+ */
+function getPackageIdentifier(item: InstallableItem, platform: Platform): string {
+  if ('identifier' in item) {
+    // PackageMetadata
+    return item.identifier;
+  }
+  // App - extract from command
+  const command = getInstallCommand(item, platform);
+  const pkgManager = getPackageManager(platform);
+
+  switch (pkgManager) {
+    case 'winget':
+      const match = command.match(/--id\s+(\S+)/);
+      return match ? match[1] : '';
+    case 'brew':
+      const brewMatch = command.match(/brew\s+install\s+(?:--cask\s+)?(\S+)/);
+      return brewMatch ? brewMatch[1] : '';
+    case 'apt':
+      const aptMatch = command.match(/apt\s+install\s+(?:-y\s+)?(\S+)/);
+      return aptMatch ? aptMatch[1] : '';
+    case 'pacman':
+      const pacmanMatch = command.match(/pacman\s+-S\s+(?:--needed\s+)?(\S+)/);
+      return pacmanMatch ? pacmanMatch[1] : '';
+    case 'dnf':
+      const dnfMatch = command.match(/dnf\s+install\s+(?:-y\s+)?(\S+)/);
+      return dnfMatch ? dnfMatch[1] : '';
+    default:
+      return '';
+  }
 }
 
 /**
@@ -28,16 +66,19 @@ function getPackageManager(platform: Platform): string {
 }
 
 /**
- * Generate a one-line command for running all installs sequentially
+ * Get the name of an installable item
  */
-export function generateCommand(apps: App[], platform: Platform): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, platform))
+function getItemName(item: InstallableItem): string {
+  return (item as App).name || (item as PackageMetadata).name;
+}
+
+/**
+ * Get package identifiers for script generation
+ */
+function getPackageIdentifiers(items: InstallableItem[], platform: Platform): string[] {
+  return items
+    .map(item => getPackageIdentifier(item, platform))
     .filter(Boolean);
-
-  if (commands.length === 0) return '';
-
-  return commands.join(' && ');
 }
 
 /**
@@ -70,13 +111,6 @@ function getTimestamp(): string {
 }
 
 /**
- * Escape dollar signs in bash scripts to prevent TypeScript template literal interpretation
- */
-function escapeBashVars(str: string): string {
-  return str.replace(/\$/g, '\\$');
-}
-
-/**
  * Generate Windows PowerShell installation script
  * Features:
  * - Winget availability check with Microsoft Store prompt
@@ -85,17 +119,8 @@ function escapeBashVars(str: string): string {
  * - Verbose output and progress
  * - Idempotent (safe to run multiple times)
  */
-function generateWindowsScript(apps: App[]): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, 'windows'))
-    .filter(Boolean);
-
-  // Extract package IDs for verification (e.g., 'winget install --id Google.Chrome' -> 'Google.Chrome')
-  const packageIds = commands.map(cmd => {
-    const match = cmd.match(/--id\s+(\S+)/);
-    return match ? match[1] : cmd.match(/winget\s+install\s+(\S+)/)?.[1] || '';
-  }).filter(Boolean);
-
+function generateWindowsScript(items: InstallableItem[]): string {
+  const packageIds = getPackageIdentifiers(items, 'windows');
   const packagesList = packageIds.map(id => `'${id}'`).join(', ');
 
   return `# PackStack Installation Script for Windows
@@ -116,7 +141,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  PackStack Windows Installer" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Preparing to install ${apps.length} package(s)..." -ForegroundColor Green
+Write-Host "Preparing to install ${items.length} package(s)..." -ForegroundColor Green
 Write-Host ""
 
 # Check for winget
@@ -220,25 +245,28 @@ Read-Host "Press Enter to exit"
  * - Verification for each package
  * - Idempotent
  */
-function generateMacOsScript(apps: App[]): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, 'macos'))
-    .filter(Boolean);
+function generateMacOsScript(items: InstallableItem[]): string {
+  const packageIds = getPackageIdentifiers(items, 'macos');
 
-  // Categorize commands into cask and regular brew installs
-  const caskCommands = commands.filter(cmd => cmd.includes('--cask'));
-  const regularCommands = commands.filter(cmd => !cmd.includes('--cask'));
+  // Categorize into cask and regular brew installs based on package name or metadata
+  const caskPackages: string[] = [];
+  const regularPackages: string[] = [];
 
-  // Extract package names
-  const caskPackages = caskCommands.map(cmd => {
-    const match = cmd.match(/brew\s+install\s+(?:--cask\s+)?(\S+)/);
-    return match ? match[1] : '';
-  }).filter(Boolean);
-
-  const regularPackages = regularCommands.map(cmd => {
-    const match = cmd.match(/brew\s+install\s+(\S+)/);
-    return match ? match[1] : '';
-  }).filter(Boolean);
+  for (const id of packageIds) {
+    // Check if this is a PackageMetadata with repository info
+    const item = items.find(i => getPackageIdentifier(i, 'macos') === id);
+    if (item && 'repository' in item && item.repository === 'cask') {
+      caskPackages.push(id);
+    } else {
+      // Default to cask for GUI apps (heuristics)
+      const isLikelyCask = /(?:visual|code|chrome|firefox|docker|slack|discord|spotify|vscode|atom|intellij|pycharm|webstorm|android|postman|insomnia|tableplus)/i.test(id);
+      if (isLikelyCask) {
+        caskPackages.push(id);
+      } else {
+        regularPackages.push(id);
+      }
+    }
+  }
 
   // Build the cask installation section
   let caskSection = '';
@@ -319,7 +347,7 @@ echo "========================================"
 echo "  PackStack macOS Installer"
 echo "========================================"
 echo ""
-echo "Preparing to install ${apps.length} package(s)..."
+echo "Preparing to install ${items.length} package(s)..."
 echo ""
 
 # Check if Homebrew is installed
@@ -396,17 +424,8 @@ echo ""
  * - Verification with dpkg
  * - Idempotent
  */
-function generateDebianScript(apps: App[], platform: 'ubuntu' | 'debian'): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, platform))
-    .filter(Boolean);
-
-  // Extract package names
-  const packages = commands.map(cmd => {
-    const match = cmd.match(/apt\s+install\s+(?:-y\s+)?(\S+(?:\s+\S+)*)/);
-    return match ? match[1].trim() : '';
-  }).filter(Boolean);
-
+function generateDebianScript(items: InstallableItem[], platform: 'ubuntu' | 'debian'): string {
+  const packages = getPackageIdentifiers(items, platform);
   const pkgList = packages.map(pkg => `'${pkg}'`).join(' ');
 
   return `#!/bin/bash
@@ -428,7 +447,7 @@ echo "========================================"
 echo "  PackStack ${platform === 'ubuntu' ? 'Ubuntu' : 'Debian'} Installer"
 echo "========================================"
 echo ""
-echo "Preparing to install ${apps.length} package(s)..."
+echo "Preparing to install ${items.length} package(s)..."
 echo ""
 
 # Update package list
@@ -507,17 +526,8 @@ echo ""
  * - Verification with pacman
  * - Idempotent
  */
-function generateArchScript(apps: App[]): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, 'arch'))
-    .filter(Boolean);
-
-  // Extract package names
-  const packages = commands.map(cmd => {
-    const match = cmd.match(/pacman\s+-S\s+(?:--needed\s+)?(\S+(?:\s+\S+)*)/);
-    return match ? match[1].trim() : '';
-  }).filter(Boolean);
-
+function generateArchScript(items: InstallableItem[]): string {
+  const packages = getPackageIdentifiers(items, 'arch');
   const pkgList = packages.map(pkg => `'${pkg}'`).join(' ');
 
   return `#!/bin/bash
@@ -539,7 +549,7 @@ echo "========================================"
 echo "  PackStack Arch Linux Installer"
 echo "========================================"
 echo ""
-echo "Preparing to install ${apps.length} package(s)..."
+echo "Preparing to install ${items.length} package(s)..."
 echo ""
 
 # Update package database
@@ -659,17 +669,8 @@ echo ""
  * - Verification with rpm
  * - Idempotent
  */
-function generateFedoraScript(apps: App[]): string {
-  const commands = apps
-    .map((app) => getInstallCommand(app, 'fedora'))
-    .filter(Boolean);
-
-  // Extract package names
-  const packages = commands.map(cmd => {
-    const match = cmd.match(/dnf\s+install\s+(?:-y\s+)?(\S+(?:\s+\S+)*)/);
-    return match ? match[1].trim() : '';
-  }).filter(Boolean);
-
+function generateFedoraScript(items: InstallableItem[]): string {
+  const packages = getPackageIdentifiers(items, 'fedora');
   const pkgList = packages.map(pkg => `'${pkg}'`).join(' ');
 
   return `#!/bin/bash
@@ -691,7 +692,7 @@ echo "========================================"
 echo "  PackStack Fedora Installer"
 echo "========================================"
 echo ""
-echo "Preparing to install ${apps.length} package(s)..."
+echo "Preparing to install ${items.length} package(s)..."
 echo ""
 
 # Check package updates
@@ -764,43 +765,44 @@ echo ""
 /**
  * Generate installation script content based on platform
  * This is the main entry point for script generation
+ * Supports both App (old) and PackageMetadata (new) types
  */
-export function generateScriptContent(apps: App[], platform: Platform): string {
-  if (apps.length === 0) {
-    return '# No apps selected for installation\n';
+export function generateScriptContent(items: InstallableItem[], platform: Platform): string {
+  if (items.length === 0) {
+    return '# No packages selected for installation\n';
   }
 
   switch (platform) {
     case 'windows':
-      return generateWindowsScript(apps);
+      return generateWindowsScript(items);
 
     case 'macos':
-      return generateMacOsScript(apps);
+      return generateMacOsScript(items);
 
     case 'ubuntu':
-      return generateDebianScript(apps, 'ubuntu');
+      return generateDebianScript(items, 'ubuntu');
 
     case 'debian':
-      return generateDebianScript(apps, 'debian');
+      return generateDebianScript(items, 'debian');
 
     case 'arch':
-      return generateArchScript(apps);
+      return generateArchScript(items);
 
     case 'fedora':
-      return generateFedoraScript(apps);
+      return generateFedoraScript(items);
 
     case 'linux':
     default:
       // Generic linux - use debian style as fallback
-      return generateDebianScript(apps, 'ubuntu');
+      return generateDebianScript(items, 'ubuntu');
   }
 }
 
 /**
  * Download the installation script as a file
  */
-export function downloadScript(apps: App[], platform: Platform): void {
-  const content = generateScriptContent(apps, platform);
+export function downloadScript(items: InstallableItem[], platform: Platform): void {
+  const content = generateScriptContent(items, platform);
 
   // Set appropriate MIME type based on platform
   const mimeType = platform === 'windows'
@@ -820,10 +822,15 @@ export function downloadScript(apps: App[], platform: Platform): void {
 }
 
 /**
- * Calculate total download size for apps
+ * Calculate total download size for items
  */
-export function getTotalSize(apps: App[]): number {
-  return apps.reduce((total, app) => total + (app.size || 0), 0);
+export function getTotalSize(items: InstallableItem[]): number {
+  return items.reduce((total, item) => {
+    if ('size' in item) {
+      return total + (item.size || 0);
+    }
+    return total;
+  }, 0);
 }
 
 /**
