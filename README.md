@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PackStack
 
-## Getting Started
+> A modern, open-source package installer that helps you discover and install software across multiple operating systems.
 
-First, run the development server:
+![PackStack](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+
+## Overview
+
+PackStack is a web application that lets you search for software packages from official package repositories and generate custom installation scripts. Simply select your operating system, search for packages, and get a ready-to-run script to install everything at once.
+
+## Features
+
+- **Real-time Search** – Search official package repositories directly
+- **Multi-platform Support** – Windows, macOS, and Linux (Ubuntu/Debian, Arch, Fedora)
+- **Bulk Installation** – Select multiple packages and generate a single script
+- **Smart Scripts** – Generated scripts include error handling, verification, and idempotent operations
+- **No Account Required** – Completely anonymous, no tracking or analytics
+- **Modern UI** – Clean, responsive interface with smooth animations
+
+## Supported Platforms
+
+| Platform | Package Manager |
+|----------|----------------|
+| Windows | Winget |
+| macOS | Homebrew (formulae & casks) |
+| Ubuntu/Debian | APT |
+| Arch Linux | Pacman + AUR (yay/paru) |
+| Fedora | DNF |
+
+## Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/atayiilmaz/packstack.git
+cd packstack
+
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Building for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Build the application
+npm run build
 
-## Learn More
+# Preview production build
+npm run start
+```
 
-To learn more about Next.js, take a look at the following resources:
+The project is configured for static export and can be deployed to any static hosting service.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Next.js 16** – React framework with App Router
+- **React 19** – UI library
+- **TypeScript** – Type safety
+- **Tailwind CSS v4** – Styling
+- **shadcn/ui** – UI components
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+packstack/
+├── src/
+│   ├── app/              # Next.js app router pages
+│   ├── components/       # React components
+│   ├── lib/              # Package manager clients
+│   └── types/            # TypeScript definitions
+├── public/               # Static assets
+└── package.json
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How It Works
+
+1. **Select Platform** – Choose your operating system
+2. **Search Packages** – Real-time search against official APIs
+3. **Select Packages** – Add packages to your install list
+4. **Generate Script** – Get a custom installation script with:
+   - Package manager verification
+   - Error handling
+   - Progress tracking
+   - Idempotent operations
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Package data is sourced from official package repositories
+- Built with [Next.js](https://nextjs.org/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
