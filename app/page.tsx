@@ -422,7 +422,7 @@ export default function HomePage() {
               <h4 className="font-semibold mb-3">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <a href="https://github.com/atayiilmaz/pack-stack/blob/main/LICENSE" className="hover:text-foreground transition-colors">
                     MIT License
                   </a>
                 </li>
