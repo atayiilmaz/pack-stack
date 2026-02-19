@@ -131,7 +131,7 @@ export default function HomePage() {
       </section>
 
       {/* OS Selector Section */}
-      <section className="border-b bg-muted/30">
+      <section id="how-it-works" className="border-b bg-muted/30">
         <div className="container max-w-5xl px-4 py-12 md:py-16">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">

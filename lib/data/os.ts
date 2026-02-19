@@ -23,8 +23,8 @@ export const osOptions: OSSelect[] = [
     name: 'Windows',
     icon: '/icons/windows.png',
     color: '#0078D4',
-    description: 'Winget package manager',
-    command: 'winget install'
+    description: 'Chocolatey package manager',
+    command: 'choco install'
   },
   {
     id: 'macos' as const,
@@ -86,7 +86,7 @@ export const linuxDistros: OSSelect[] = [
 export function getInstallMethodForOS(osId: string): string {
   switch (osId) {
     case 'windows':
-      return 'winget';
+      return 'choco';
     case 'macos':
       return 'brew';
     case 'ubuntu':

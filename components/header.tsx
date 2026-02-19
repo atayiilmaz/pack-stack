@@ -6,10 +6,27 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Layers } from 'lucide-react';
 
 export function Header() {
+  const scrollToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToHowItWorks = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const element = document.getElementById('how-it-works');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-lg">
       <div className="container flex h-16 max-w-7xl items-center px-4">
-        <Link href="/" className="mr-6 flex items-center space-x-3 group">
+        <Link
+          href="/"
+          onClick={scrollToTop}
+          className="mr-6 flex items-center space-x-3 group"
+        >
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md group-hover:shadow-lg transition-all">
             <Layers className="h-5 w-5" />
           </div>
@@ -19,12 +36,13 @@ export function Header() {
         </Link>
 
         <nav className="ml-auto flex items-center space-x-2 text-sm font-medium">
-          <Link
+          <a
             href="#how-it-works"
-            className="hidden sm:inline-flex px-4 py-2 rounded-lg hover:bg-muted transition-colors text-foreground/70 hover:text-foreground"
+            onClick={scrollToHowItWorks}
+            className="hidden sm:inline-flex px-4 py-2 rounded-lg hover:bg-muted transition-colors text-foreground/70 hover:text-foreground cursor-pointer"
           >
             How it Works
-          </Link>
+          </a>
           <Link
             href="https://github.com/atayiilmaz/pack-stack"
             target="_blank"
