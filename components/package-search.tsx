@@ -156,8 +156,8 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No packages found for "{query}"</p>
             <p className="text-sm mt-2">
-              {platform === 'ubuntu' || platform === 'debian' || platform === 'fedora'
-                ? 'Package search is coming soon for this platform. Use macOS (Homebrew) or Arch Linux for now.'
+              {platform === 'fedora'
+                ? 'Package search is coming soon for Fedora. Try Debian, Ubuntu, macOS (Homebrew), Arch Linux, or Windows for now.'
                 : 'Try a different search term'}
             </p>
           </div>

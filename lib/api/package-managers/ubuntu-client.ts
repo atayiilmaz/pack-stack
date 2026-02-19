@@ -8,14 +8,7 @@ import { packageSearchCache, packageMetadataCache } from '../cache';
 
 /**
  * Ubuntu packages client
- * Note: Ubuntu/Debian apt packages don't have a public JSON API.
- * Packages are available via:
- * 1. Snap Store (for snaps - universal Linux packages)
- * 2. Local apt commands (apt-cache search, apt-cache show)
- * 3. Downloading Packages.gz files (requires server-side processing)
- *
- * This client returns empty results with a helpful message.
- * TODO: Implement via Next.js API route for server-side package fetching
+ * Searches Ubuntu packages via Next.js API route
  */
 export class UbuntuClient implements PackageManagerClient {
   readonly type = 'apt' as const;
@@ -42,12 +35,30 @@ export class UbuntuClient implements PackageManagerClient {
       return JSON.parse(cached);
     }
 
-    // Ubuntu/Debian don't have public APIs for apt packages
-    // Return empty results - the UI will show a helpful message
-    const results: PackageMetadata[] = [];
+    try {
+      const url = `/api/packages/search/ubuntu?q=${encodeURIComponent(query)}&limit=${limit}`;
+      const response = await fetch(url);
 
-    packageSearchCache.set(cacheKey, JSON.stringify(results));
-    return results;
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      const results: PackageMetadata[] = (data.results || []).map((pkg: any) => ({
+        name: pkg.name,
+        identifier: pkg.identifier,
+        description: pkg.description || '',
+        version: pkg.version || '',
+        homepage: pkg.homepage,
+        packageManager: 'apt',
+        repository: 'ubuntu',
+      }));
+
+      packageSearchCache.set(cacheKey, JSON.stringify(results));
+      return results;
+    } catch (error) {
+      return [];
+    }
   }
 
   async getPackage(identifier: string): Promise<PackageMetadata | null> {
@@ -56,6 +67,13 @@ export class UbuntuClient implements PackageManagerClient {
     const cached = packageMetadataCache.get(cacheKey);
     if (cached) {
       return cached as PackageMetadata;
+    }
+
+    // Search by identifier to get details
+    const results = await this.search(identifier, { limit: 1 });
+    if (results.length > 0) {
+      packageMetadataCache.set(cacheKey, results[0]);
+      return results[0];
     }
 
     return null;

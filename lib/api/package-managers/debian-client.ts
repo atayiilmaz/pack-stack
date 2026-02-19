@@ -8,9 +8,7 @@ import { packageSearchCache, packageMetadataCache } from '../cache';
 
 /**
  * Debian packages client
- * Note: Debian apt packages don't have a public JSON API.
- * This client returns empty results with a helpful message.
- * TODO: Implement via Next.js API route for server-side package fetching
+ * Searches Debian packages via Next.js API route
  */
 export class DebianClient implements PackageManagerClient {
   readonly type = 'apt' as const;
@@ -28,11 +26,30 @@ export class DebianClient implements PackageManagerClient {
       return JSON.parse(cached);
     }
 
-    // Debian doesn't have a public API for apt packages
-    const results: PackageMetadata[] = [];
+    try {
+      const url = `/api/packages/search/debian?q=${encodeURIComponent(query)}&limit=${limit}`;
+      const response = await fetch(url);
 
-    packageSearchCache.set(cacheKey, JSON.stringify(results));
-    return results;
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      const results: PackageMetadata[] = (data.results || []).map((pkg: any) => ({
+        name: pkg.name,
+        identifier: pkg.identifier,
+        description: pkg.description || '',
+        version: pkg.version || '',
+        homepage: pkg.homepage,
+        packageManager: 'apt',
+        repository: 'debian',
+      }));
+
+      packageSearchCache.set(cacheKey, JSON.stringify(results));
+      return results;
+    } catch (error) {
+      return [];
+    }
   }
 
   async getPackage(identifier: string): Promise<PackageMetadata | null> {
@@ -41,6 +58,13 @@ export class DebianClient implements PackageManagerClient {
     const cached = packageMetadataCache.get(cacheKey);
     if (cached) {
       return cached as PackageMetadata;
+    }
+
+    // Search by identifier to get details
+    const results = await this.search(identifier, { limit: 1 });
+    if (results.length > 0) {
+      packageMetadataCache.set(cacheKey, results[0]);
+      return results[0];
     }
 
     return null;
