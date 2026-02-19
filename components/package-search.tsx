@@ -1,13 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { Search, Loader2, Package, AlertCircle, Check } from 'lucide-react';
+import { Search, Loader2, Package, AlertCircle, Check, TrendingUp } from 'lucide-react';
 import { Platform, PackageMetadata } from '@/types/app';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getClientForPlatform } from '@/lib/api';
+import { getPopularPackages } from '@/lib/data/popular-packages';
 
 interface PackageSearchProps {
   platform: Platform;
@@ -22,6 +23,9 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
   const [error, setError] = React.useState<string | null>(null);
   const [hasSearched, setHasSearched] = React.useState(false);
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined);
+
+  // Get popular packages for the current platform
+  const popularPackages = React.useMemo(() => getPopularPackages(platform), [platform]);
 
   // Debounced search
   React.useEffect(() => {
@@ -144,10 +148,56 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
       {/* Results */}
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {!hasSearched && query.length < 2 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Enter at least 2 characters to search</p>
-            <p className="text-sm mt-2">Search results are fetched from official package sources</p>
+          <div>
+            {/* Popular Packages */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Popular Packages</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {popularPackages.slice(0, 10).map((pkg) => (
+                  <button
+                    key={pkg.identifier}
+                    onClick={() => onSelect(pkg)}
+                    className={cn(
+                      'text-left p-3 rounded-lg border-2 transition-all duration-200',
+                      'hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]',
+                      'group',
+                      isSelected(pkg)
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border bg-card hover:border-primary/30'
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            'font-semibold text-sm',
+                            isSelected(pkg) ? 'text-primary' : 'group-hover:text-primary transition-colors'
+                          )}>
+                            {pkg.name}
+                          </span>
+                          {isSelected(pkg) && (
+                            <Check className="h-3.5 w-3.5 text-primary" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {pkg.description || 'No description available'}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search hint */}
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">Or search for more packages</p>
+              <p className="text-xs mt-1">Enter at least 2 characters to search</p>
+            </div>
           </div>
         )}
 
@@ -230,7 +280,12 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
       {/* Results Count */}
       {hasSearched && results.length > 0 && (
         <div className="text-sm text-muted-foreground text-center">
-          Showing {results.length} result{results.length !== 1 ? 's' : ''}
+          Showing {results.length} result{results.length !== 1 ? 's' : ''} • <button
+            onClick={() => setQuery('')}
+            className="text-primary hover:underline"
+          >
+            Show popular packages
+          </button>
         </div>
       )}
     </div>
