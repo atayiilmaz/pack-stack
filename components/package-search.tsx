@@ -161,10 +161,13 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
           </div>
         )}
 
-        {results.map((pkg) => (
+        {results.filter(pkg => pkg?.identifier).map((pkg) => (
           <button
             key={pkg.identifier}
-            onClick={() => onSelect(pkg)}
+            onClick={() => {
+              console.log('Package clicked:', pkg);
+              onSelect(pkg);
+            }}
             className={cn(
               'w-full text-left p-4 rounded-lg border-2 transition-all duration-200',
               'hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]',

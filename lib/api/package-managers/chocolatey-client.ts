@@ -39,12 +39,13 @@ export class ChocolateyClient implements PackageManagerClient {
 
       const data = await response.json();
       const results: PackageMetadata[] = (data.results || []).map((pkg: any) => ({
-        name: pkg.Title || pkg.Id,
-        identifier: pkg.Id,
-        description: pkg.Description || '',
-        version: pkg.Version,
-        homepage: pkg.ProjectUrl || undefined,
-        packageManager: 'choco',
+        name: pkg.name || pkg.Title || pkg.Id,
+        identifier: pkg.identifier || pkg.Id,
+        description: pkg.description || pkg.Description || '',
+        version: pkg.version || pkg.Version || '',
+        homepage: pkg.homepage || pkg.ProjectUrl || undefined,
+        packageManager: pkg.packageManager || 'choco',
+        repository: pkg.repository || 'chocolatey',
       }));
 
       packageSearchCache.set(cacheKey, JSON.stringify(results));

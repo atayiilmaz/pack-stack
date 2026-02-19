@@ -18,14 +18,22 @@ export default function HomePage() {
 
   // Toggle item selection
   const toggleItem = useCallback((item: InstallableItem) => {
+    console.log('toggleItem called with:', item);
     setSelectedItems((prev) => {
       const identifier = item.identifier;
       const exists = prev.find(i => i.identifier === identifier);
 
+      console.log('Previous items:', prev);
+      console.log('Item exists:', exists);
+
       if (exists) {
-        return prev.filter(i => i.identifier !== identifier);
+        const filtered = prev.filter(i => i.identifier !== identifier);
+        console.log('Removed, new items:', filtered);
+        return filtered;
       } else {
-        return [...prev, item];
+        const updated = [...prev, item];
+        console.log('Added, new items:', updated);
+        return updated;
       }
     });
   }, []);
