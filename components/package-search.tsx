@@ -77,7 +77,13 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
       case 'pacman':
         return pkg.repository === 'aur' ? 'AUR' : 'Official';
       case 'apt':
-        return pkg.repository || 'apt';
+        return pkg.repository === 'snap' ? 'Snap' : (pkg.repository || 'apt');
+      case 'choco':
+        return 'Chocolatey';
+      case 'snap':
+        return 'Snap';
+      case 'dnf':
+        return pkg.repository === 'snap' ? 'Snap' : (pkg.repository || 'Fedora');
       default:
         return pkg.packageManager;
     }
@@ -92,7 +98,17 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
           ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
           : 'bg-blue-500/10 text-blue-500 border-blue-500/20';
       case 'apt':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
+        return pkg.repository === 'snap'
+          ? 'bg-green-500/10 text-green-500 border-green-500/20'
+          : 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'choco':
+        return 'bg-pink-500/10 text-pink-500 border-pink-500/20';
+      case 'snap':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'dnf':
+        return pkg.repository === 'snap'
+          ? 'bg-green-500/10 text-green-500 border-green-500/20'
+          : 'bg-blue-600/10 text-blue-600 border-blue-600/20';
       default:
         return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
@@ -109,7 +125,6 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="pl-10 h-12 text-base"
-          autoFocus
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -139,8 +154,8 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No packages found for "{query}"</p>
             <p className="text-sm mt-2">
-              {platform === 'windows'
-                ? 'Winget search is coming soon'
+              {platform === 'ubuntu' || platform === 'debian' || platform === 'fedora'
+                ? 'Package search is coming soon for this platform. Use macOS (Homebrew) or Arch Linux for now.'
                 : 'Try a different search term'}
             </p>
           </div>

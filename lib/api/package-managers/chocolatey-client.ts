@@ -7,13 +7,13 @@ import {
 import { packageSearchCache, packageMetadataCache } from '../cache';
 
 /**
- * Arch Linux client - uses Next.js API route to bypass CORS
+ * Chocolatey client - uses Next.js API route to bypass CORS
  */
-export class ArchClient implements PackageManagerClient {
-  readonly type = 'pacman' as const;
+export class ChocolateyClient implements PackageManagerClient {
+  readonly type = 'choco' as const;
 
   /**
-   * Search for packages via API route (bypasses CORS)
+   * Search for packages via API route
    */
   async search(query: string, options: SearchOptions = {}): Promise<PackageMetadata[]> {
     if (!query || query.length < 2) {
@@ -21,7 +21,7 @@ export class ArchClient implements PackageManagerClient {
     }
 
     const limit = options.limit ?? 50;
-    const cacheKey = `arch:search:${query}:${limit}`;
+    const cacheKey = `chocolatey:search:${query}:${limit}`;
 
     const cached = packageSearchCache.get(cacheKey);
     if (cached) {
@@ -29,30 +29,28 @@ export class ArchClient implements PackageManagerClient {
     }
 
     try {
-      const url = `/api/packages/search/arch?q=${encodeURIComponent(query)}&limit=${limit}`;
+      const url = `/api/packages/search/windows?q=${encodeURIComponent(query)}&limit=${limit}`;
       const response = await fetch(url);
 
       if (!response.ok) {
-        console.error('Arch API error:', response.status);
+        console.error('Chocolatey API error:', response.status);
         return [];
       }
 
       const data = await response.json();
       const results: PackageMetadata[] = (data.results || []).map((pkg: any) => ({
-        name: pkg.name,
-        identifier: pkg.identifier,
-        description: pkg.description || '',
-        version: pkg.version,
-        homepage: pkg.homepage,
-        size: pkg.size,
-        repository: pkg.repository,
-        packageManager: 'pacman',
+        name: pkg.Title || pkg.Id,
+        identifier: pkg.Id,
+        description: pkg.Description || '',
+        version: pkg.Version,
+        homepage: pkg.ProjectUrl || undefined,
+        packageManager: 'choco',
       }));
 
       packageSearchCache.set(cacheKey, JSON.stringify(results));
       return results;
     } catch (error) {
-      console.error('Arch search error:', error);
+      console.error('Chocolatey search error:', error);
       return [];
     }
   }
@@ -61,13 +59,14 @@ export class ArchClient implements PackageManagerClient {
    * Get package details
    */
   async getPackage(identifier: string): Promise<PackageMetadata | null> {
-    const cacheKey = `arch:package:${identifier}`;
+    const cacheKey = `chocolatey:package:${identifier}`;
 
     const cached = packageMetadataCache.get(cacheKey);
     if (cached) {
       return cached as PackageMetadata;
     }
 
+    // For now, search by the identifier to get details
     const results = await this.search(identifier, { limit: 1 });
     if (results.length > 0) {
       packageMetadataCache.set(cacheKey, results[0]);
@@ -78,4 +77,4 @@ export class ArchClient implements PackageManagerClient {
   }
 }
 
-export const archClient = new ArchClient();
+export const chocolateyClient = new ChocolateyClient();

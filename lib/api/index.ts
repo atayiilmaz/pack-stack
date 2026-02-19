@@ -18,6 +18,8 @@ export { homebrewClient, HomebrewClient } from './package-managers/homebrew-clie
 export { archClient, ArchClient } from './package-managers/arch-client';
 export { debianClient, DebianClient } from './package-managers/debian-client';
 export { ubuntuClient, UbuntuClient, ubuntuClients } from './package-managers/ubuntu-client';
+export { chocolateyClient, ChocolateyClient } from './package-managers/chocolatey-client';
+export { fedoraClient, FedoraClient } from './package-managers/fedora-client';
 
 /**
  * Get the appropriate package manager client for a platform
@@ -28,6 +30,8 @@ import { homebrewClient } from './package-managers/homebrew-client';
 import { archClient } from './package-managers/arch-client';
 import { debianClient } from './package-managers/debian-client';
 import { ubuntuClient } from './package-managers/ubuntu-client';
+import { chocolateyClient } from './package-managers/chocolatey-client';
+import { fedoraClient } from './package-managers/fedora-client';
 
 export function getClientForPlatform(platform: Platform): PackageManagerClient | null {
   switch (platform) {
@@ -40,13 +44,9 @@ export function getClientForPlatform(platform: Platform): PackageManagerClient |
     case 'ubuntu':
       return ubuntuClient;
     case 'fedora':
-      // Fedora uses dnf, which doesn't have a public API
-      // Fall back to debian client for similar packages
-      return debianClient;
+      return fedoraClient;
     case 'windows':
-      // Winget doesn't have a public API
-      // This would need to be implemented via GitHub scraping or CLI
-      return null;
+      return chocolateyClient;
     default:
       return debianClient;
   }

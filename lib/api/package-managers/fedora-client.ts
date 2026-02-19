@@ -7,13 +7,13 @@ import {
 import { packageSearchCache, packageMetadataCache } from '../cache';
 
 /**
- * Debian packages client
- * Note: Debian apt packages don't have a public JSON API.
+ * Fedora packages client
+ * Note: Fedora DNF packages don't have a public JSON API.
  * This client returns empty results with a helpful message.
  * TODO: Implement via Next.js API route for server-side package fetching
  */
-export class DebianClient implements PackageManagerClient {
-  readonly type = 'apt' as const;
+export class FedoraClient implements PackageManagerClient {
+  readonly type = 'dnf' as const;
 
   async search(query: string, options: SearchOptions = {}): Promise<PackageMetadata[]> {
     if (!query || query.length < 2) {
@@ -21,14 +21,14 @@ export class DebianClient implements PackageManagerClient {
     }
 
     const limit = options.limit ?? 50;
-    const cacheKey = `debian:search:${query}:${limit}`;
+    const cacheKey = `fedora:search:${query}:${limit}`;
 
     const cached = packageSearchCache.get(cacheKey);
     if (cached) {
       return JSON.parse(cached);
     }
 
-    // Debian doesn't have a public API for apt packages
+    // Fedora doesn't have a public API for DNF packages
     const results: PackageMetadata[] = [];
 
     packageSearchCache.set(cacheKey, JSON.stringify(results));
@@ -36,7 +36,7 @@ export class DebianClient implements PackageManagerClient {
   }
 
   async getPackage(identifier: string): Promise<PackageMetadata | null> {
-    const cacheKey = `debian:package:${identifier}`;
+    const cacheKey = `fedora:package:${identifier}`;
 
     const cached = packageMetadataCache.get(cacheKey);
     if (cached) {
@@ -47,4 +47,4 @@ export class DebianClient implements PackageManagerClient {
   }
 }
 
-export const debianClient = new DebianClient();
+export const fedoraClient = new FedoraClient();
