@@ -18,22 +18,14 @@ export default function HomePage() {
 
   // Toggle item selection
   const toggleItem = useCallback((item: InstallableItem) => {
-    console.log('toggleItem called with:', item);
     setSelectedItems((prev) => {
       const identifier = item.identifier;
       const exists = prev.find(i => i.identifier === identifier);
 
-      console.log('Previous items:', prev);
-      console.log('Item exists:', exists);
-
       if (exists) {
-        const filtered = prev.filter(i => i.identifier !== identifier);
-        console.log('Removed, new items:', filtered);
-        return filtered;
+        return prev.filter(i => i.identifier !== identifier);
       } else {
-        const updated = [...prev, item];
-        console.log('Added, new items:', updated);
-        return updated;
+        return [...prev, item];
       }
     });
   }, []);
@@ -170,7 +162,7 @@ export default function HomePage() {
               platform === 'ubuntu' ? 'Ubuntu' :
               platform === 'debian' ? 'Debian' :
               platform === 'fedora' ? 'Fedora (via apt-compatible)' :
-              platform === 'windows' ? 'Winget (coming soon)' : 'your platform'}
+              platform === 'windows' ? 'Chocolatey' : 'your platform'}
             </p>
           </div>
 

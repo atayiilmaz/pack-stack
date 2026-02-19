@@ -29,6 +29,10 @@ function getPackageIdentifier(item: InstallableItem, platform: Platform): string
   const pkgManager = getPackageManager(platform);
 
   switch (pkgManager) {
+    case 'choco':
+      // Chocolatey: extract package name from "choco install pkgname" or just return the identifier
+      const chocoMatch = command.match(/choco\s+install\s+(\S+)/);
+      return chocoMatch ? chocoMatch[1] : item.identifier || '';
     case 'winget':
       const match = command.match(/--id\s+(\S+)/);
       return match ? match[1] : '';
@@ -54,7 +58,7 @@ function getPackageIdentifier(item: InstallableItem, platform: Platform): string
  */
 function getPackageManager(platform: Platform): string {
   switch (platform) {
-    case 'windows': return 'winget';
+    case 'windows': return 'choco';
     case 'macos': return 'brew';
     case 'ubuntu':
     case 'debian': return 'apt';
@@ -113,9 +117,9 @@ function getTimestamp(): string {
 /**
  * Generate Windows PowerShell installation script
  * Features:
- * - Winget availability check with Microsoft Store prompt
+ * - Chocolatey availability check with auto-install
  * - Error handling for each package
- * - Administrator check (non-blocking)
+ * - Administrator check (required for Chocolatey)
  * - Verbose output and progress
  * - Idempotent (safe to run multiple times)
  */
@@ -126,47 +130,66 @@ function generateWindowsScript(items: InstallableItem[]): string {
   return `# PackStack Installation Script for Windows
 # Generated on ${getTimestamp()}
 # This script is idempotent and safe to run multiple times
+# Uses Chocolatey package manager
 
 $ErrorActionPreference = "Continue"
 
-# Administrator check
+# Administrator check - REQUIRED for Chocolatey
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Warning "This script is not running as Administrator. Some installations may require elevation."
-    Write-Host "If installations fail, right-click and run 'Run as Administrator'" -ForegroundColor Yellow
     Write-Host ""
-}
-
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  PackStack Windows Installer" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Preparing to install ${items.length} package(s)..." -ForegroundColor Green
-Write-Host ""
-
-# Check for winget
-if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Write-Warning "Windows Package Manager (winget) is not installed."
+    Write-Host "========================================" -ForegroundColor Red
+    Write-Host "  Administrator Required" -ForegroundColor Red
+    Write-Host "========================================" -ForegroundColor Red
     Write-Host ""
-    Write-Host " winget is required to install packages automatically." -ForegroundColor Yellow
-    Write-Host " Please install 'App Installer' from the Microsoft Store." -ForegroundColor Yellow
+    Write-Host "This script MUST be run as Administrator for Chocolatey to work." -ForegroundColor Red
     Write-Host ""
-    Write-Host " Opening Microsoft Store..." -ForegroundColor Cyan
-    Start-Process ms-windows-store://pdp/?productid=9NBLGGH4NNS1
-    Write-Host ""
-    Write-Host " After installing App Installer, run this script again." -ForegroundColor Yellow
+    Write-Host "Please right-click this script and select:" -ForegroundColor Yellow
+    Write-Host "  'Run as Administrator'" -ForegroundColor Yellow
     Write-Host ""
     Read-Host "Press Enter to exit"
     exit 1
 }
 
-Write-Host "Windows Package Manager found: $((winget --version).Trim())" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  PackStack Windows Installer" -ForegroundColor Cyan
+Write-Host "  Powered by Chocolatey" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Preparing to install ${items.length} package(s)..." -ForegroundColor Green
 Write-Host ""
 
-# Update winget source
-Write-Host "Updating package sources..." -ForegroundColor Cyan
-winget source update --include-unknown | Out-Null
-Write-Host "Package sources updated." -ForegroundColor Green
+# Check for Chocolatey
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+    Write-Host "Chocolatey is not installed. Installing now..." -ForegroundColor Yellow
+    Write-Host ""
+
+    try {
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+        # Refresh environment variables
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+        Write-Host ""
+        Write-Host "Chocolatey installed successfully!" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to install Chocolatey. Please install manually from:" -ForegroundColor Red
+        Write-Host "https://chocolatey.org/install" -ForegroundColor Cyan
+        Write-Host ""
+        Read-Host "Press Enter to exit"
+        exit 1
+    }
+}
+
+Write-Host "Chocolatey found: $((choco --version).Trim())" -ForegroundColor Green
+Write-Host ""
+
+# Update Chocolatey
+Write-Host "Updating Chocolatey..." -ForegroundColor Cyan
+choco upgrade chocolatey -y | Out-Null
+Write-Host "Chocolatey updated." -ForegroundColor Green
 Write-Host ""
 
 # Track installation results
@@ -183,25 +206,29 @@ foreach ($pkg in $packages) {
     Write-Host "[$currentIndex/$($packages.Count)] Installing: $pkg" -ForegroundColor Cyan
 
     try {
-        $result = winget install --id $pkg --accept-package-agreements --accept-source-agreements -e --silent 2>&1
-
-        if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 0x0) {
-            Write-Host "  Successfully installed: $pkg" -ForegroundColor Green
-            $successCount++
-        } elseif ($LASTEXITCODE -eq 0x57) {
+        # Check if already installed
+        $installed = choco list --local-only --exact $pkg -r
+        if ($installed) {
             Write-Host "  Already installed (skipped): $pkg" -ForegroundColor Yellow
             $successCount++
         } else {
-            Write-Host "  Installation returned code: $LASTEXITCODE" -ForegroundColor Yellow
-            # Check if actually installed despite error code
-            $installed = winget list --id $pkg -e 2>$null
-            if ($installed) {
-                Write-Host "  Verified as installed: $pkg" -ForegroundColor Green
+            # Install the package
+            $output = choco install $pkg -y --limitoutput 2>&1
+
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  Successfully installed: $pkg" -ForegroundColor Green
                 $successCount++
             } else {
-                Write-Host "  Failed to install: $pkg" -ForegroundColor Red
-                $failedPackages += $pkg
-                $failedCount++
+                # Some packages return non-zero even when successful
+                $installed = choco list --local-only --exact $pkg -r
+                if ($installed) {
+                    Write-Host "  Verified as installed: $pkg" -ForegroundColor Green
+                    $successCount++
+                } else {
+                    Write-Host "  Failed to install: $pkg" -ForegroundColor Red
+                    $failedPackages += $pkg
+                    $failedCount++
+                }
             }
         }
     } catch {
@@ -224,6 +251,11 @@ if ($failedCount -gt 0) {
     Write-Host ""
     Write-Host "Failed packages:" -ForegroundColor Red
     $failedPackages | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    Write-Host ""
+    Write-Host "You can try installing failed packages manually with:" -ForegroundColor Yellow
+    foreach ($pkg in $failedPackages) {
+        Write-Host "  choco install $pkg -y" -ForegroundColor Cyan
+    }
 }
 Write-Host ""
 

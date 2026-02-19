@@ -79,6 +79,7 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
       case 'apt':
         return pkg.repository === 'snap' ? 'Snap' : (pkg.repository || 'apt');
       case 'choco':
+      case 'chocolatey':
         return 'Chocolatey';
       case 'snap':
         return 'Snap';
@@ -102,6 +103,7 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
           ? 'bg-green-500/10 text-green-500 border-green-500/20'
           : 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'choco':
+      case 'chocolatey':
         return 'bg-pink-500/10 text-pink-500 border-pink-500/20';
       case 'snap':
         return 'bg-green-500/10 text-green-500 border-green-500/20';
@@ -164,10 +166,7 @@ export function PackageSearch({ platform, onSelect, selectedPackages }: PackageS
         {results.filter(pkg => pkg?.identifier).map((pkg) => (
           <button
             key={pkg.identifier}
-            onClick={() => {
-              console.log('Package clicked:', pkg);
-              onSelect(pkg);
-            }}
+            onClick={() => onSelect(pkg)}
             className={cn(
               'w-full text-left p-4 rounded-lg border-2 transition-all duration-200',
               'hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]',

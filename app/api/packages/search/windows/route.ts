@@ -31,10 +31,8 @@ export async function GET(request: NextRequest) {
     // Check if we need to refresh the cache
     const now = Date.now();
     if (!chocolateyCache || (now - cacheTimestamp) > CACHE_DURATION) {
-      console.log('Refreshing Chocolatey package cache...');
       chocolateyCache = await fetchChocolateyPackages();
       cacheTimestamp = now;
-      console.log(`Cached ${chocolateyCache.length} Chocolatey packages`);
     }
 
     // Filter cached packages by query
@@ -68,7 +66,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results: uniqueResults.slice(0, limit) });
   } catch (error) {
-    console.error('Windows package search error:', error);
     return NextResponse.json({ results: [] }, { status: 200 });
   }
 }
@@ -87,7 +84,6 @@ async function fetchChocolateyPackages(): Promise<SearchResult[]> {
       });
 
       if (!response.ok) {
-        console.error('Chocolatey API error:', response.status);
         break;
       }
 
@@ -104,13 +100,10 @@ async function fetchChocolateyPackages(): Promise<SearchResult[]> {
       } else {
         nextUrl = null;
       }
-
-      console.log(`Fetched ${results.length} packages so far...`);
     }
 
     return results;
   } catch (error) {
-    console.error('Error fetching Chocolatey packages:', error);
     return results;
   }
 }
