@@ -32,7 +32,10 @@ function getPackageIdentifier(item: InstallableItem, platform: Platform): string
     case 'choco':
       // Chocolatey: extract package name from "choco install pkgname" or just return the identifier
       const chocoMatch = command.match(/choco\s+install\s+(\S+)/);
-      return chocoMatch ? chocoMatch[1] : item.identifier || '';
+      if (chocoMatch) return chocoMatch[1];
+      // Return identifier for PackageMetadata, or id for App
+      const pkgMeta = item as any;
+      return pkgMeta.identifier || pkgMeta.id || '';
     case 'winget':
       const match = command.match(/--id\s+(\S+)/);
       return match ? match[1] : '';
